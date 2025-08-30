@@ -3,12 +3,15 @@ services:
     name: bms-proxy-backend
     env: node
     plan: free
-    buildCommand: npm install && npm run build
+    buildCommand: npm ci --only=production && npm run build
     startCommand: npm run start:prod
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 10000
+        value: 4000
+    buildFilter:
+      paths:
+        - backend/bms-proxy/**
     healthCheckPath: /api/health
     autoDeploy: true
