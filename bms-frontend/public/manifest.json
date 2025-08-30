@@ -1,7 +1,13 @@
 {
   "short_name": "Crossbow-BMS",
   "name": "Crossbow Building Management System",
+  "description": "Advanced temperature control, AC management, and real-time monitoring for modern buildings",
   "icons": [
+    {
+      "src": "crossbow-favicon.png",
+      "type": "image/png",
+      "sizes": "any"
+    },
     {
       "src": "favicon.ico",
       "sizes": "64x64 32x32 24x24 16x16",
@@ -20,6 +26,9 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#667eea",
+  "background_color": "#f5f7fa",
+  "orientation": "portrait-primary",
+  "categories": ["productivity", "utilities"],
+  "lang": "en"
 }

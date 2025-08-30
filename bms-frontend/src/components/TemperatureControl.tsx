@@ -472,16 +472,17 @@ export const TemperatureControl: React.FC<TemperatureControlProps> = ({
         position: 'relative',
         overflow: 'hidden',
         zIndex: 1,
+        pb: 12, // Add bottom padding for fixed footer
       }}
     >
-      {/* Animated background elements */}
+      {/* Enhanced animated background elements */}
       <Box
         sx={{
           position: 'fixed',
           top: -100,
           right: -100,
-          width: 300,
-          height: 300,
+          width: 400,
+          height: 400,
           borderRadius: '50%',
           background: 'linear-gradient(45deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1))',
           animation: 'float 8s ease-in-out infinite',
@@ -497,14 +498,43 @@ export const TemperatureControl: React.FC<TemperatureControlProps> = ({
           position: 'fixed',
           bottom: -50,
           left: -50,
-          width: 200,
-          height: 200,
+          width: 300,
+          height: 300,
           borderRadius: '50%',
           background: 'linear-gradient(45deg, rgba(118, 75, 162, 0.08), rgba(102, 126, 234, 0.08))',
           animation: 'float 6s ease-in-out infinite reverse',
           zIndex: 0,
         }}
       />
+      
+      {/* Floating particles */}
+      {[...Array(12)].map((_, index) => (
+        <Box
+          key={index}
+          sx={{
+            position: 'fixed',
+            width: 4,
+            height: 4,
+            borderRadius: '50%',
+            background: 'rgba(255, 215, 0, 0.4)',
+            animation: `particleFloat ${3 + index * 0.3}s ease-in-out infinite`,
+            animationDelay: `${index * 0.2}s`,
+            left: `${5 + index * 8}%`,
+            top: `${10 + index * 6}%`,
+            zIndex: 0,
+            '@keyframes particleFloat': {
+              '0%, 100%': { 
+                transform: 'translateY(0px) scale(1)',
+                opacity: 0.4
+              },
+              '50%': { 
+                transform: 'translateY(-15px) scale(1.3)',
+                opacity: 1
+              },
+            }
+          }}
+        />
+      ))}
 
       {/* Top Bar */}
       <Fade in={fadeIn} timeout={800}>
@@ -725,7 +755,24 @@ export const TemperatureControl: React.FC<TemperatureControlProps> = ({
               >
                 <CardContent sx={{ p: { xs: 1.5, sm: 2, md: 3 } }}>
                   <Box textAlign="center" mb={{ xs: 2, sm: 3 }}>
-                    <Typography variant="h4" component="h1" gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' } }}>
+                    <Typography 
+                      variant="h4" 
+                      component="h1" 
+                      gutterBottom 
+                      sx={{ 
+                        fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' },
+                        background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                        backgroundClip: 'text',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        fontWeight: 700,
+                        animation: 'gradientShift 3s ease-in-out infinite',
+                        '@keyframes gradientShift': {
+                          '0%, 100%': { background: 'linear-gradient(45deg, #667eea, #764ba2)' },
+                          '50%': { background: 'linear-gradient(45deg, #764ba2, #667eea)' },
+                        }
+                      }}
+                    >
                       Temperature Control
                     </Typography>
                     <Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>
@@ -760,6 +807,11 @@ export const TemperatureControl: React.FC<TemperatureControlProps> = ({
                               fontSize: { xs: 24, sm: 28, md: 32 },
                               color: acOn ? '#667eea' : 'text.disabled',
                               transition: 'all 0.3s ease',
+                              animation: acOn ? 'pulse 1.5s ease-in-out infinite' : 'none',
+                              '@keyframes pulse': {
+                                '0%, 100%': { transform: 'scale(1)' },
+                                '50%': { transform: 'scale(1.1)' },
+                              }
                             }} 
                           />
                           <Typography 
@@ -806,6 +858,11 @@ export const TemperatureControl: React.FC<TemperatureControlProps> = ({
                               fontSize: { xs: 24, sm: 28, md: 32 },
                               color: scheduleStatus ? '#764ba2' : 'text.disabled',
                               transition: 'all 0.3s ease',
+                              animation: scheduleStatus ? 'rotate 3s linear infinite' : 'none',
+                              '@keyframes rotate': {
+                                '0%': { transform: 'rotate(0deg)' },
+                                '100%': { transform: 'rotate(360deg)' },
+                              }
                             }} 
                           />
                           <Typography 

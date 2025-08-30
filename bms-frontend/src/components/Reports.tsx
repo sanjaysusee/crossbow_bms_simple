@@ -220,7 +220,7 @@ export const Reports: React.FC<ReportsProps> = ({ onLogout, onNavigate }) => {
   };
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', pb: 12 }}> {/* Add bottom padding for footer */}
       {/* Sidebar */}
       <Box
         component="nav"
@@ -251,6 +251,8 @@ export const Reports: React.FC<ReportsProps> = ({ onLogout, onNavigate }) => {
               boxSizing: 'border-box', 
               width: 280,
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              pb: 12, // Add bottom padding to prevent footer overlap
+              zIndex: 999, // Ensure sidebar is below footer
             },
           }}
           open
@@ -300,6 +302,7 @@ export const Reports: React.FC<ReportsProps> = ({ onLogout, onNavigate }) => {
             zIndex: 1000,
             width: { md: `calc(100% - 280px)` },
             ml: { md: '280px' },
+            bottom: 'auto', // Ensure AppBar doesn't interfere with footer
           }}
         >
           <Toolbar>
@@ -322,7 +325,7 @@ export const Reports: React.FC<ReportsProps> = ({ onLogout, onNavigate }) => {
         </AppBar>
 
         {/* Main Content */}
-        <Container maxWidth="xl" sx={{ pt: 10, pb: 4 }}>
+        <Container maxWidth="xl" sx={{ pt: 10, pb: 16 }}> {/* Increased bottom padding for footer */}
           {/* Header Card */}
           <Card
             sx={{

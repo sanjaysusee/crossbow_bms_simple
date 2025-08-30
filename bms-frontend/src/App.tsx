@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Login } from './components/Login';
 import { TemperatureControl } from './components/TemperatureControl';
 import { Reports } from './components/Reports';
+import { Footer } from './components/Footer';
 import { Box, CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 
 const theme = createTheme({
@@ -103,7 +104,7 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ minHeight: '100vh' }}>
+      <Box sx={{ minHeight: '100vh', pb: 10 }}> {/* Add bottom padding for footer */}
         {!isLoggedIn ? (
           <Login onLogin={handleLoginSuccess} />
         ) : forceReportsView || currentView === 'reports' ? (
@@ -111,6 +112,9 @@ function App() {
         ) : (
           <TemperatureControl onLogout={handleLogout} onNavigate={handleViewChange} />
         )}
+        
+        {/* Footer - Always visible on all pages */}
+        <Footer variant="light" />
       </Box>
     </ThemeProvider>
   );
