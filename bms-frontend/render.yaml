@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: bms-control-frontend
+    env: static
+    plan: free
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./build
+    envVars:
+      - key: REACT_APP_API_BASE_URL
+        value: https://your-backend-name.onrender.com/api
+    autoDeploy: true
