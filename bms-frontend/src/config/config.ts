@@ -8,12 +8,12 @@ export interface AppConfig {
 }
 
 export const config: AppConfig = {
-  apiBaseUrl: process.env.REACT_APP_API_BASE_URL || 'http://localhost:4000/api',
-  bmsUsername: process.env.REACT_APP_BMS_USERNAME || 'crossbow',
-  bmsPassword: process.env.REACT_APP_BMS_PASSWORD || 'crossbow@123',
-  version: process.env.REACT_APP_VERSION || '1.0.0',
-  enableDebugLogging: process.env.REACT_APP_ENABLE_DEBUG_LOGGING === 'true',
-  enableAnalytics: process.env.REACT_APP_ENABLE_ANALYTICS === 'true',
+  apiBaseUrl: 'https://crossbow-bms-mt8t.onrender.com/api',
+  bmsUsername: 'crossbow',
+  bmsPassword: 'crossbow@123',
+  version: '1.0.0',
+  enableDebugLogging: false,
+  enableAnalytics: false,
 };
 
 export const isDevelopment = process.env.NODE_ENV === 'development';

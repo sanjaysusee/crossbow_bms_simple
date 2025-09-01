@@ -3,15 +3,15 @@ import { Injectable } from '@nestjs/common';
 @Injectable()
 export class ConfigService {
   get bmsBaseUrl(): string {
-    return process.env.BMS_BASE_URL || 'https://bmsdev.chakranetwork.com:8080';
+    return 'https://bmsdev.chakranetwork.com:8080'; // Production BMS URL
   }
 
   get bmsUsername(): string {
-    return process.env.BMS_USERNAME || 'crossbow';
+    return 'crossbow';
   }
 
   get bmsPassword(): string {
-    return process.env.BMS_PASSWORD || 'crossbow@123';
+    return 'crossbow@123';
   }
 
   get port(): number {
