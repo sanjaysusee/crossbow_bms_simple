@@ -26,13 +26,28 @@ console.log('Environment:', process.env.NODE_ENV);
 console.log('Config object:', config);
 console.log('Full API URL for set-temp:', API_BASE_URL + '/set-temp');
 
+// Retry logic for cold starts
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000, // 30 second timeout for production
+  timeout: 60000, // 60 second timeout for production (cold start handling)
 });
+
+// Add retry interceptor for cold start handling
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.code === 'ECONNABORTED' && error.message.includes('timeout')) {
+      console.log('Request timed out, retrying after delay...');
+      // Wait 5 seconds and retry once
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      return api.request(error.config);
+    }
+    throw error;
+  }
+);
 
 export const bmsApi = {
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
