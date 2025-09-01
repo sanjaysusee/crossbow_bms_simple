@@ -23,6 +23,8 @@ const API_BASE_URL = config.apiBaseUrl;
 
 console.log('API Base URL:', API_BASE_URL);
 console.log('Environment:', process.env.NODE_ENV);
+console.log('Config object:', config);
+console.log('Full API URL for set-temp:', API_BASE_URL + '/set-temp');
 
 const api = axios.create({
   baseURL: API_BASE_URL,
