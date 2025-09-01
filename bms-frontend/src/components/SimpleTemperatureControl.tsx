@@ -154,14 +154,7 @@ export const SimpleTemperatureControl: React.FC<SimpleTemperatureControlProps> =
 
     try {
       const data = await makeApiCall(async () => {
-        const response = await fetch("http://localhost:4000/api/set-temp", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        if (!response.ok) throw new Error("Failed to set temperature");
-        return response.json();
+        return await bmsApi.setTemperature(payload);
       });
 
       if (data.data && data.data.status === "Failure") {
@@ -210,14 +203,7 @@ export const SimpleTemperatureControl: React.FC<SimpleTemperatureControlProps> =
 
     try {
       const data = await makeApiCall(async () => {
-        const response = await fetch("http://localhost:4000/api/set-temp", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        if (!response.ok) throw new Error("Failed to control AC");
-        return response.json();
+        return await bmsApi.controlAc(payload);
       });
 
       if (data.data && data.data.status === "Failure") {
