@@ -13,11 +13,9 @@ interface FooterProps {
 }
 
 export const Footer: React.FC<FooterProps> = ({ variant = 'light' }) => {
-  const isLight = variant === 'light';
   const [hovered, setHovered] = useState(false);
   const [clicked, setClicked] = useState(false);
   const [sparkleAnimation, setSparkleAnimation] = useState(false);
-  const [showTooltip, setShowTooltip] = useState(false);
 
   // Sparkle effect on hover
   useEffect(() => {
@@ -35,12 +33,10 @@ export const Footer: React.FC<FooterProps> = ({ variant = 'light' }) => {
 
   const handleIconHover = () => {
     setHovered(true);
-    setShowTooltip(true);
   };
 
   const handleIconLeave = () => {
     setHovered(false);
-    setShowTooltip(false);
   };
 
   return (

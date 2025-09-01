@@ -3,14 +3,10 @@ import {
   Box,
   Card,
   CardContent,
-  TextField,
   Button,
   Typography,
   Alert,
   CircularProgress,
-  Paper,
-  InputAdornment,
-  IconButton,
   Fade,
   Slide,
   Grow,
@@ -19,39 +15,26 @@ import {
   Divider,
   Chip,
   Zoom,
-  useTheme,
 } from '@mui/material';
 import {
-  Visibility,
-  VisibilityOff,
-  Lock,
-  Person,
   Login as LoginIcon,
   Security,
   Wifi,
   WifiOff,
   CheckCircle,
   Error as ErrorIcon,
-  AutoAwesome,
-  Star,
-  Bolt,
 } from '@mui/icons-material';
-import { LoginCredentials } from '../types/bms';
 import { bmsApi } from '../services/bmsApi';
+import { Footer } from './Footer';
+import { config } from '../config/config';
 
 interface LoginProps {
   onLogin: (cookies: { JSESSIONID?: string; DWRSESSIONID?: string }) => void;
 }
 
 export const Login: React.FC<LoginProps> = ({ onLogin }) => {
-  const theme = useTheme();
-  const [credentials, setCredentials] = useState<LoginCredentials>({
-    username: '',
-    password: '',
-  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
-  const [showPassword, setShowPassword] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const [fadeIn, setFadeIn] = useState(false);
   const [slideIn, setSlideIn] = useState(false);
@@ -95,34 +78,27 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
     };
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAccessBMS = async () => {
     setLoading(true);
     setError('');
 
     try {
-      const response = await bmsApi.login(credentials);
+      // Use configuration credentials
+      const response = await bmsApi.login({
+        username: config.bmsUsername,
+        password: config.bmsPassword
+      });
       console.log('Login successful:', response);
       onLogin(response.cookies);
     } catch (err) {
       console.error('Login failed:', err);
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setError(err instanceof Error ? err.message : 'Access failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleInputChange = (field: keyof LoginCredentials) => (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setCredentials(prev => ({ ...prev, [field]: e.target.value }));
-  };
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
-
-  const isFormValid = credentials.username.trim() && credentials.password.trim();
 
   return (
     <Box
@@ -363,93 +339,9 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
                   <Divider sx={{ mb: 3 }} />
 
-                  {/* Enhanced Login Form */}
-                  <Box component="form" onSubmit={handleSubmit}>
+                  {/* Enhanced Access Button */}
+                  <Box>
                     <Stack spacing={3}>
-                      {/* Enhanced Username Field */}
-                      <TextField
-                        fullWidth
-                        label="Username"
-                        variant="outlined"
-                        value={credentials.username}
-                        onChange={handleInputChange('username')}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <Person color="action" />
-                            </InputAdornment>
-                          ),
-                        }}
-                        sx={{
-                          transition: 'all 0.3s ease',
-                          '& .MuiOutlinedInput-root': {
-                            '&:hover fieldset': {
-                              borderColor: 'primary.main',
-                              borderWidth: 2,
-                            },
-                            '&.Mui-focused fieldset': {
-                              borderColor: 'primary.main',
-                              borderWidth: 2,
-                              boxShadow: '0 0 0 3px rgba(102, 126, 234, 0.1)',
-                            },
-                          },
-                          '&:hover': {
-                            transform: 'translateY(-2px)',
-                          }
-                        }}
-                      />
-
-                      {/* Enhanced Password Field */}
-                      <TextField
-                        fullWidth
-                        label="Password"
-                        type={showPassword ? 'text' : 'password'}
-                        variant="outlined"
-                        value={credentials.password}
-                        onChange={handleInputChange('password')}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <Lock color="action" />
-                            </InputAdornment>
-                          ),
-                          endAdornment: (
-                            <InputAdornment position="end">
-                              <IconButton
-                                onClick={togglePasswordVisibility}
-                                edge="end"
-                                size="small"
-                                sx={{
-                                  transition: 'all 0.3s ease',
-                                  '&:hover': {
-                                    transform: 'scale(1.1)',
-                                  }
-                                }}
-                              >
-                                {showPassword ? <VisibilityOff /> : <Visibility />}
-                              </IconButton>
-                            </InputAdornment>
-                          ),
-                        }}
-                        sx={{
-                          transition: 'all 0.3s ease',
-                          '& .MuiOutlinedInput-root': {
-                            '&:hover fieldset': {
-                              borderColor: 'primary.main',
-                              borderWidth: 2,
-                            },
-                            '&.Mui-focused fieldset': {
-                              borderColor: 'primary.main',
-                              borderWidth: 2,
-                              boxShadow: '0 0 0 3px rgba(102, 126, 234, 0.1)',
-                            },
-                          },
-                          '&:hover': {
-                            transform: 'translateY(-2px)',
-                          }
-                        }}
-                      />
-
                       {/* Enhanced Error Display */}
                       {error && (
                         <Alert
@@ -473,13 +365,13 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                         </Alert>
                       )}
 
-                      {/* Enhanced Submit Button */}
+                      {/* Enhanced Access Button */}
                       <Button
-                        type="submit"
+                        onClick={handleAccessBMS}
                         fullWidth
                         variant="contained"
                         size="large"
-                        disabled={loading || !isFormValid}
+                        disabled={loading}
                         startIcon={
                           loading ? (
                             <CircularProgress size={20} color="inherit" />
@@ -520,22 +412,19 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                           }
                         }}
                       >
-                        {loading ? 'Signing In...' : 'Sign In'}
+                        {loading ? 'Connecting...' : 'Access BMS Control'}
                       </Button>
                     </Stack>
                   </Box>
 
-                  {/* Enhanced Footer */}
-                  <Box textAlign="center" mt={3}>
-                    <Typography variant="caption" color="text.secondary">
-                      Secure access to Building Management System
-                    </Typography>
-                  </Box>
                 </CardContent>
               </Card>
             </Grow>
           </Box>
         </Fade>
+        
+        {/* Elaborate Footer Component */}
+        <Footer />
       </Container>
     </Box>
   );

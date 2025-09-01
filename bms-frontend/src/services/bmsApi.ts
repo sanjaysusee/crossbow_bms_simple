@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { config } from '../config/config';
 import {
   LoginCredentials,
   LoginResponse,
@@ -17,17 +18,8 @@ import {
   ScheduleTimeResponse
 } from '../types/bms';
 
-// Environment-based API configuration
-const getApiBaseUrl = () => {
-  if (process.env.NODE_ENV === 'production') {
-    // In production, use the environment variable or default to your deployed backend
-    return process.env.REACT_APP_API_BASE_URL || 'https://your-backend-url.railway.app/api';
-  }
-  // In development, use localhost
-  return 'http://localhost:4000/api';
-};
-
-const API_BASE_URL = getApiBaseUrl();
+// Use configuration service for API base URL
+const API_BASE_URL = config.apiBaseUrl;
 
 console.log('API Base URL:', API_BASE_URL);
 console.log('Environment:', process.env.NODE_ENV);
@@ -82,9 +74,25 @@ export const bmsApi = {
         return value; // Already object
       };
 
+      // Check if the response contains session timeout HTML
+      if (typeof response.data.data === 'string' && response.data.data.includes('Session Timeout')) {
+        console.error('Session timeout detected in BMS response');
+        const sessionError = new Error('Session Timeout');
+        (sessionError as any).response = { status: 408, data: response.data.data };
+        throw sessionError;
+      }
+
       // First unwrap (outer data)
       const parsedOuter = safeParse(response.data.data);
       console.log('Parsed outer BMS response:', parsedOuter);
+
+      // Check if parsed outer response indicates session timeout
+      if (typeof parsedOuter === 'string' && parsedOuter.includes('Session Timeout')) {
+        console.error('Session timeout detected in parsed BMS response');
+        const sessionError = new Error('Session Timeout');
+        (sessionError as any).response = { status: 408, data: parsedOuter };
+        throw sessionError;
+      }
 
       // Second unwrap (inner devicedata)
       const parsedInner = safeParse(parsedOuter.devicedata);

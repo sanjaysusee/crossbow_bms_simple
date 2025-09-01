@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Login } from './components/Login';
-import { TemperatureControl } from './components/TemperatureControl';
-import { Reports } from './components/Reports';
-import { Footer } from './components/Footer';
+import { SimpleTemperatureControl } from './components/SimpleTemperatureControl';
 import { Box, CssBaseline, ThemeProvider, createTheme } from '@mui/material';
+import { bmsApi } from './services/bmsApi';
+import { config, validateConfig } from './config/config';
 
 const theme = createTheme({
   palette: {
@@ -14,107 +14,122 @@ const theme = createTheme({
       main: '#dc004e',
     },
   },
-  breakpoints: {
-    values: {
-      xs: 0,
-      sm: 600,
-      md: 960,
-      lg: 1280,
-      xl: 1920,
-    },
-  },
 });
 
 function App() {
+  // Validate configuration on app start
+  useEffect(() => {
+    validateConfig();
+  }, []);
+
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [cookies, setCookies] = useState<any>(null);
-  const [currentView, setCurrentView] = useState<'main' | 'reports'>('main');
+  const [isAutoLoggingIn, setIsAutoLoggingIn] = useState(false);
+  const [manualLogout, setManualLogout] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Check for existing session on app load
+  // Login function - for user-initiated login and session recovery
+  const handleLogin = useCallback(async () => {
+    if (isAutoLoggingIn || manualLogout) return; // Prevent if manually logged out
+    
+    setIsAutoLoggingIn(true);
+    setError(null);
+    try {
+      console.log('User initiated login, attempting authentication...');
+      const response = await bmsApi.login({
+        username: config.bmsUsername,
+        password: config.bmsPassword
+      });
+      
+      console.log('Login successful:', response);
+      setCookies(response.cookies);
+      setIsLoggedIn(true);
+      
+      // Save session to localStorage
+      localStorage.setItem('bms-session', JSON.stringify({
+        cookies: response.cookies,
+        timestamp: Date.now(),
+        userInitiated: true,
+      }));
+      
+    } catch (error) {
+      console.error('Login failed:', error);
+      setError('Login failed. Please try again.');
+    } finally {
+      setIsAutoLoggingIn(false);
+    }
+  }, [isAutoLoggingIn, manualLogout]);
+
+  // Check for existing session on app load only - NO automatic login
   useEffect(() => {
     const savedSession = localStorage.getItem('bms-session');
+    const manualLogoutFlag = localStorage.getItem('manual-logout');
+    
+    if (manualLogoutFlag === 'true') {
+      setManualLogout(true);
+      return; // Don't auto-login if manually logged out
+    }
+
     if (savedSession) {
       try {
         const sessionData = JSON.parse(savedSession);
         setCookies(sessionData.cookies);
         setIsLoggedIn(true);
+        console.log('Restored session from localStorage');
       } catch (error) {
         console.error('Failed to restore session:', error);
+        // Don't auto-login on app start - user must click "Access BMS"
         localStorage.removeItem('bms-session');
       }
     }
-  }, []);
-
-  // Handle navigation
-  useEffect(() => {
-    const handleNavigation = () => {
-      if (window.location.pathname === '/reports') {
-        setCurrentView('reports');
-      } else {
-        setCurrentView('main');
-      }
-    };
-
-    handleNavigation();
-    window.addEventListener('popstate', handleNavigation);
-    return () => window.removeEventListener('popstate', handleNavigation);
+    // Don't auto-login on app start - user must explicitly click "Access BMS"
   }, []);
 
   const handleLoginSuccess = (loginCookies: any) => {
     setCookies(loginCookies);
     setIsLoggedIn(true);
+    setManualLogout(false); // Reset manual logout flag
     
-    // Save session to localStorage
+    // Clear manual logout flag and save session
+    localStorage.removeItem('manual-logout');
     localStorage.setItem('bms-session', JSON.stringify({
       cookies: loginCookies,
       timestamp: Date.now(),
+      autoLogin: false, // Manual login
     }));
   };
 
   const handleLogout = () => {
     setIsLoggedIn(false);
     setCookies(null);
-    setCurrentView('main');
+    setManualLogout(true); // Set manual logout flag
     
-    // Clear session from localStorage
+    // Clear session and set manual logout flag
     localStorage.removeItem('bms-session');
-    
-    // Reset URL
-    window.history.pushState({}, '', '/');
+    localStorage.setItem('manual-logout', 'true');
+    console.log('Manual logout - auto-login disabled');
   };
 
-  const handleViewChange = (view: 'main' | 'reports') => {
-    console.log('handleViewChange called with view:', view);
-    console.log('Current view before change:', currentView);
-    setCurrentView(view);
-    if (view === 'reports') {
-      window.history.pushState({}, '', '/reports');
-    } else {
-      window.history.pushState({}, '', '/');
+  // Expose auto-login function to child components for session recovery
+  const triggerSessionRecovery = useCallback(() => {
+    if (!manualLogout) {
+      console.log('Session recovery triggered by API failure');
+      handleLogin();
     }
-    console.log('Current view after change:', view);
-  };
+  }, [manualLogout, handleLogin]);
 
-  // Debug logging
-  console.log('Rendering App with currentView:', currentView, 'isLoggedIn:', isLoggedIn);
-  
-  // Temporary test - force reports view for debugging
-  const forceReportsView = false; // Set to true to test Reports component
-  
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ minHeight: '100vh', pb: 10 }}> {/* Add bottom padding for footer */}
-        {!isLoggedIn ? (
+      <Box sx={{ minHeight: '100vh', backgroundColor: '#ffffff' }}>
+        {!isLoggedIn && !isAutoLoggingIn ? (
           <Login onLogin={handleLoginSuccess} />
-        ) : forceReportsView || currentView === 'reports' ? (
-          <Reports onLogout={handleLogout} onNavigate={handleViewChange} />
         ) : (
-          <TemperatureControl onLogout={handleLogout} onNavigate={handleViewChange} />
+          <SimpleTemperatureControl 
+            onLogout={handleLogout} 
+            onSessionExpired={triggerSessionRecovery}
+          />
         )}
-        
-        {/* Footer - Always visible on all pages */}
-        <Footer variant="light" />
       </Box>
     </ThemeProvider>
   );

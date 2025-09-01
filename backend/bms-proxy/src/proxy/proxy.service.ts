@@ -1,13 +1,17 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import axios, { AxiosResponse } from 'axios';
 import { AuthService } from '../auth/auth.service';
+import { ConfigService } from '../config/config.service';
 import { SetTempPayload, VfdStatsRequest } from '../common/types';
 import * as qs from 'querystring';
 import { AcControlPayload } from '../common/types';
 
 @Injectable()
 export class ProxyService {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService
+  ) {}
 
   async setTemperature(payload: SetTempPayload): Promise<any> {
     try {
@@ -114,10 +118,32 @@ export class ProxyService {
     } catch (error) {
       console.error('Set temperature failed:', error.response?.data || error.message);
       
-      // If unauthorized, clear cookies
-      if (error.response?.status === 401) {
-        this.authService.clearCookies();
-        throw new BadRequestException('Session expired. Please login again.');
+      // Check if it's a session timeout error (401, 403, 408 or HTML timeout response)
+      const isSessionTimeout = (
+        error.response?.status === 401 || 
+        error.response?.status === 403 || 
+        error.response?.status === 408 ||
+        (typeof error.response?.data === 'string' && error.response.data.includes('Session Timeout'))
+      );
+      
+      if (isSessionTimeout) {
+        console.log('Session timeout detected, attempting automatic re-login...');
+        
+        try {
+          // Attempt automatic re-login
+          await this.authService.login({ 
+            username: this.configService.bmsUsername, 
+            password: this.configService.bmsPassword 
+          });
+          console.log('Automatic re-login successful, retrying setTemperature...');
+          
+          // Retry the original request with new session
+          return await this.setTemperature(payload);
+        } catch (reloginError) {
+          console.error('Automatic re-login failed:', reloginError);
+          this.authService.clearCookies();
+          throw new BadRequestException('Session expired and automatic re-login failed. Please login again.');
+        }
       }
       
       throw new BadRequestException('Failed to set temperature');
@@ -229,10 +255,32 @@ export class ProxyService {
     } catch (error) {
       console.error('AC control failed:', error.response?.data || error.message);
       
-      // If unauthorized, clear cookies
-      if (error.response?.status === 401) {
-        this.authService.clearCookies();
-        throw new BadRequestException('Session expired. Please login again.');
+      // Check if it's a session timeout error (401, 403, 408 or HTML timeout response)
+      const isSessionTimeout = (
+        error.response?.status === 401 || 
+        error.response?.status === 403 || 
+        error.response?.status === 408 ||
+        (typeof error.response?.data === 'string' && error.response.data.includes('Session Timeout'))
+      );
+      
+      if (isSessionTimeout) {
+        console.log('Session timeout detected, attempting automatic re-login...');
+        
+        try {
+          // Attempt automatic re-login
+          await this.authService.login({ 
+            username: this.configService.bmsUsername, 
+            password: this.configService.bmsPassword 
+          });
+          console.log('Automatic re-login successful, retrying controlAc...');
+          
+          // Retry the original request with new session
+          return await this.controlAc(payload);
+        } catch (reloginError) {
+          console.error('Automatic re-login failed:', reloginError);
+          this.authService.clearCookies();
+          throw new BadRequestException('Session expired and automatic re-login failed. Please login again.');
+        }
       }
       
       throw new BadRequestException('Failed to control AC');
@@ -242,11 +290,21 @@ export class ProxyService {
   async getCurrentStatus(): Promise<any> {
     try {
       // Get stored cookies
-      const cookies = this.authService.getCookies();
+      let cookies = this.authService.getCookies();
       
-      // Check if we have JSESSIONID (main session cookie)
+      // If no cookies, attempt to login first
       if (!cookies.JSESSIONID) {
-        throw new BadRequestException('No active session. Please login first.');
+        console.log('No active session found, attempting initial login...');
+        try {
+          cookies = await this.authService.login({ 
+            username: this.configService.bmsUsername, 
+            password: this.configService.bmsPassword 
+          });
+          console.log('Initial login successful, cookies obtained:', cookies);
+        } catch (loginError) {
+          console.error('Initial login failed:', loginError);
+          throw new BadRequestException('Failed to establish initial session. Please try again.');
+        }
       }
 
       // Prepare the payload exactly as shown in BMS network tab
@@ -345,10 +403,32 @@ export class ProxyService {
     } catch (error) {
       console.error('Get current status failed:', error.response?.data || error.message);
       
-      // If unauthorized, clear cookies
-      if (error.response?.status === 401) {
-        this.authService.clearCookies();
-        throw new BadRequestException('Session expired. Please login again.');
+      // Check if it's a session timeout error (401, 403, 408 or HTML timeout response)
+      const isSessionTimeout = (
+        error.response?.status === 401 || 
+        error.response?.status === 403 || 
+        error.response?.status === 408 ||
+        (typeof error.response?.data === 'string' && error.response.data.includes('Session Timeout'))
+      );
+      
+      if (isSessionTimeout) {
+        console.log('Session timeout detected, attempting automatic re-login...');
+        
+        try {
+          // Attempt automatic re-login
+          await this.authService.login({ 
+            username: this.configService.bmsUsername, 
+            password: this.configService.bmsPassword 
+          });
+          console.log('Automatic re-login successful, retrying getCurrentStatus...');
+          
+          // Retry the original request with new session
+          return await this.getCurrentStatus();
+        } catch (reloginError) {
+          console.error('Automatic re-login failed:', reloginError);
+          this.authService.clearCookies();
+          throw new BadRequestException('Session expired and automatic re-login failed. Please login again.');
+        }
       }
       
       throw new BadRequestException('Failed to get current status');
@@ -460,10 +540,32 @@ export class ProxyService {
     } catch (error) {
       console.error('Get VFD stats failed:', error.response?.data || error.message);
       
-      // If unauthorized, clear cookies
-      if (error.response?.status === 401) {
-        this.authService.clearCookies();
-        throw new BadRequestException('Session expired. Please login again.');
+      // Check if it's a session timeout error (401, 403, 408 or HTML timeout response)
+      const isSessionTimeout = (
+        error.response?.status === 401 || 
+        error.response?.status === 403 || 
+        error.response?.status === 408 ||
+        (typeof error.response?.data === 'string' && error.response.data.includes('Session Timeout'))
+      );
+      
+      if (isSessionTimeout) {
+        console.log('Session timeout detected, attempting automatic re-login...');
+        
+        try {
+          // Attempt automatic re-login
+          await this.authService.login({ 
+            username: this.configService.bmsUsername, 
+            password: this.configService.bmsPassword 
+          });
+          console.log('Automatic re-login successful, retrying getVfdStats...');
+          
+          // Retry the original request with new session
+          return await this.getVfdStats(payload);
+        } catch (reloginError) {
+          console.error('Automatic re-login failed:', reloginError);
+          this.authService.clearCookies();
+          throw new BadRequestException('Session expired and automatic re-login failed. Please login again.');
+        }
       }
       
       throw new BadRequestException('Failed to get VFD stats');
@@ -575,10 +677,32 @@ export class ProxyService {
     } catch (error) {
       console.error('Set schedule status failed:', error.response?.data || error.message);
       
-      // If unauthorized, clear cookies
-      if (error.response?.status === 401) {
-        this.authService.clearCookies();
-        throw new BadRequestException('Session expired. Please login again.');
+      // Check if it's a session timeout error (401, 403, 408 or HTML timeout response)
+      const isSessionTimeout = (
+        error.response?.status === 401 || 
+        error.response?.status === 403 || 
+        error.response?.status === 408 ||
+        (typeof error.response?.data === 'string' && error.response.data.includes('Session Timeout'))
+      );
+      
+      if (isSessionTimeout) {
+        console.log('Session timeout detected, attempting automatic re-login...');
+        
+        try {
+          // Attempt automatic re-login
+          await this.authService.login({ 
+            username: this.configService.bmsUsername, 
+            password: this.configService.bmsPassword 
+          });
+          console.log('Automatic re-login successful, retrying setScheduleStatus...');
+          
+          // Retry the original request with new session
+          return await this.setScheduleStatus(scheduleStatusPayload);
+        } catch (reloginError) {
+          console.error('Automatic re-login failed:', reloginError);
+          this.authService.clearCookies();
+          throw new BadRequestException('Session expired and automatic re-login failed. Please login again.');
+        }
       }
       
       throw new BadRequestException('Failed to set schedule status');
@@ -690,10 +814,32 @@ export class ProxyService {
     } catch (error) {
       console.error('Set schedule time failed:', error.response?.data || error.message);
       
-      // If unauthorized, clear cookies
-      if (error.response?.status === 401) {
-        this.authService.clearCookies();
-        throw new BadRequestException('Session expired. Please login again.');
+      // Check if it's a session timeout error (401, 403, 408 or HTML timeout response)
+      const isSessionTimeout = (
+        error.response?.status === 401 || 
+        error.response?.status === 403 || 
+        error.response?.status === 408 ||
+        (typeof error.response?.data === 'string' && error.response.data.includes('Session Timeout'))
+      );
+      
+      if (isSessionTimeout) {
+        console.log('Session timeout detected, attempting automatic re-login...');
+        
+        try {
+          // Attempt automatic re-login
+          await this.authService.login({ 
+            username: this.configService.bmsUsername, 
+            password: this.configService.bmsPassword 
+          });
+          console.log('Automatic re-login successful, retrying setScheduleTime...');
+          
+          // Retry the original request with new session
+          return await this.setScheduleTime(scheduleTimePayload);
+        } catch (reloginError) {
+          console.error('Automatic re-login failed:', reloginError);
+          this.authService.clearCookies();
+          throw new BadRequestException('Session expired and automatic re-login failed. Please login again.');
+        }
       }
       
       throw new BadRequestException('Failed to set schedule time');
